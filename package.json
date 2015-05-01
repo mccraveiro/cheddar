@@ -4,7 +4,7 @@
   "description": "ES6 framework",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --compilers js:babel/register test/**/*"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,10 @@
   "bugs": {
     "url": "https://github.com/mccraveiro/cheddar/issues"
   },
-  "homepage": "https://github.com/mccraveiro/cheddar#readme"
+  "homepage": "https://github.com/mccraveiro/cheddar#readme",
+  "dependencies": {
+    "babel": "^5.2.2",
+    "chai": "^2.3.0",
+    "mocha-co": "^1.17.1-co.1"
+  }
 }

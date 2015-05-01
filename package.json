@@ -22,7 +22,6 @@
   "dependencies": {
     "babel": "^5.2.2",
     "chai": "^2.3.0",
-    "mocha": "^2.2.4",
     "mocha-co": "^1.17.1-co.1"
   }
 }

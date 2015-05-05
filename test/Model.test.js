@@ -21,13 +21,29 @@ describe('ApplicationModel', () => {
     model = new TestModel()
   })
 
-  afterEach(function *() {
+  afterEach(function*() {
     yield model.delete()
   })
 
   describe('constructor', () => {
     it('returns a new instance', () => {
       expect(model instanceof TestModel).to.be.true
+      expect(model.id).to.exist
+    })
+  })
+
+  describe('*save', () => {
+    it('save model on db', function *() {
+      let count = yield TestModel.count()
+      expect(count).to.be.equal(0)
+
+      model.name = 'Test'
+      model.email = 'test@test.com'
+      model.password = '123456'
+      yield model.save()
+
+      count = yield TestModel.count()
+      expect(count).to.be.equal(1)
     })
   })
 

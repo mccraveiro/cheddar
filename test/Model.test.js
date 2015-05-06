@@ -1,5 +1,7 @@
-import {Model} from '../src/Cheddar'
+import {Model, Cheddar} from '../src/Cheddar'
 import {expect} from 'chai'
+
+Cheddar.database = 'localhost/cheddar-test'
 
 class TestModel extends Model {
   configure () {

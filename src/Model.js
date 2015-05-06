@@ -1,6 +1,7 @@
 import monk from 'monk'
 import co_monk from 'co-monk'
 import pluralize from 'pluralize'
+import {Cheddar} from './Cheddar'
 
 let collection         = Symbol('collection')
 let middlewares        = Symbol('middlewares')
@@ -15,7 +16,7 @@ export default class Model {
 
     this.configure && this.configure()
     this[execute_middleware]('before', 'create')
-    this[collection] = this.constructor.get_collection()
+    this[collection] = this.constructor.collection
     this.id = this[collection].id()
     this[execute_middleware]('after', 'create')
   }
@@ -66,14 +67,14 @@ export default class Model {
     })
   }
 
-  static get_collection() {
-    let database = monk('localhost/app')
+  static get collection() {
+    let database = monk(Cheddar.database)
     let collection_name = pluralize(this.name).toLowerCase()
     return co_monk(database.get(collection_name))
   }
 
   static count(query = {}) {
-    return this.get_collection().count(query)
+    return this.collection.count(query)
   }
 
   static find() {

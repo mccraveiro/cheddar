@@ -22,6 +22,9 @@
   "dependencies": {
     "babel": "^5.2.2",
     "chai": "^2.3.0",
-    "mocha-co": "^1.17.1-co.1"
+    "co-monk": "^1.0.0",
+    "mocha-co": "^1.17.1-co.1",
+    "monk": "^1.0.1",
+    "pluralize": "^1.1.2"
   }
 }

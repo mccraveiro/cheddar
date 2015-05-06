@@ -1,5 +1,11 @@
-let middlewares      = Symbol('middlewares')
-let exec_middlewares = Symbol('exec_middlewares')
+import monk from 'monk'
+import co_monk from 'co-monk'
+import pluralize from 'pluralize'
+import {Cheddar} from './Cheddar'
+
+let collection         = Symbol('collection')
+let middlewares        = Symbol('middlewares')
+let execute_middleware = Symbol('execute_middleware')
 
 export default class Model {
   constructor() {
@@ -9,9 +15,10 @@ export default class Model {
     }
 
     this.configure && this.configure()
-    this[exec_middlewares]('before', 'create')
-    // TODO: create model
-    this[exec_middlewares]('after', 'create')
+    this[execute_middleware]('before', 'create')
+    this[collection] = this.constructor.collection
+    this.id = this[collection].id()
+    this[execute_middleware]('after', 'create')
   }
 
   before(action, middleware) {
@@ -34,27 +41,40 @@ export default class Model {
   }
 
   *save() {
-    this[exec_middlewares]('before', 'save')
-    // TODO: save model
-    this[exec_middlewares]('after', 'save')
+    this[execute_middleware]('before', 'save')
 
-    // TODO: replace {} with the query result
-    yield {}
+    // Build collection instance
+    let obj = Object.assign({}, this)
+    obj._id = obj.id
+    delete obj.id
+
+    yield* this[collection].update(obj._id, obj, { upsert: true })
+    this[execute_middleware]('after', 'save')
+
+    return this
   }
 
   *delete() {
-    this[exec_middlewares]('before', 'delete')
-    // TODO: delete model
-    this[exec_middlewares]('after', 'delete')
-
-    // TODO: replace {} with the query result
-    yield {}
+    this[execute_middleware]('before', 'delete')
+    yield* this[collection].removeById(this.id)
+    this[execute_middleware]('after', 'delete')
+    return this
   }
 
-  [exec_middlewares](timing, action) {
+  [execute_middleware](timing, action) {
     this[middlewares][timing][action].forEach(middleware => {
       middleware.call(this)
     })
+  }
+
+  static get collection() {
+    let database = monk(Cheddar.database)
+    let collection_name = pluralize(this.name).toLowerCase()
+    return co_monk(database.get(collection_name))
+  }
+
+  static count(query = {}) {
+    return this.collection.count(query)
   }
 
   static find() {

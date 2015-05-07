@@ -1,13 +1,10 @@
-import {Model, Cheddar} from '../src/Cheddar'
+import {Model, Cheddar, before} from '../src/Cheddar'
 import {expect} from 'chai'
 
 Cheddar.database = 'localhost/cheddar-test'
 
 class TestModel extends Model {
-  configure () {
-    this.before('save', this.validate)
-  }
-
+  @before('save')
   validate () {
     this.ensure('age',      { type: Number })
     this.ensure('name',     { type: String, required: true })

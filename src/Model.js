@@ -5,16 +5,24 @@ import {Cheddar} from './Cheddar'
 
 let collection         = Symbol('collection')
 let middlewares        = Symbol('middlewares')
+let init_middlewares   = Symbol('init_middlewares')
 let execute_middleware = Symbol('execute_middleware')
 
-export default class Model {
-  constructor() {
-    this[middlewares] = {
-      before: { create: [], delete: [], save: [] },
-      after:  { create: [], delete: [], save: [] }
-    }
+export function after(action) {
+  return function (target, name, descriptor) {
+    target.after.call(target, action, descriptor.value);
+  }
+}
 
-    this.configure && this.configure()
+export function before(action) {
+  return function (target, name, descriptor) {
+    target.before.call(target, action, descriptor.value);
+  }
+}
+
+export class Model {
+  constructor() {
+    this[init_middlewares]();
     this[execute_middleware]('before', 'create')
     this[collection] = this.constructor.collection
     this.id = this[collection].id()
@@ -22,10 +30,12 @@ export default class Model {
   }
 
   before(action, middleware) {
+    if (!this[middlewares]) this[init_middlewares]();
     this[middlewares].before[action].push(middleware)
   }
 
   after(action, middleware) {
+    if (!this[middlewares]) this[init_middlewares]();
     this[middlewares].before[action].push(middleware)
   }
 
@@ -59,6 +69,13 @@ export default class Model {
     yield* this[collection].removeById(this.id)
     this[execute_middleware]('after', 'delete')
     return this
+  }
+
+  [init_middlewares]() {
+    this[middlewares] = {
+      before: { create: [], delete: [], save: [] },
+      after:  { create: [], delete: [], save: [] }
+    }
   }
 
   [execute_middleware](timing, action) {

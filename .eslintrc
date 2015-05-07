@@ -1,0 +1,15 @@
+{
+  "parser": "babel-eslint",
+  "ecmaFeatures": {
+    "classes": true,
+    "modules": true
+  },
+  "rules": {
+    "quotes": "single",
+    "semi": "never",
+    "no-underscore-dangle": false
+  },
+  "env": {
+    "mocha": true
+  }
+}

@@ -1,12 +1,12 @@
 import monk from 'monk'
-import co_monk from 'co-monk'
+import coMonk from 'co-monk'
 import pluralize from 'pluralize'
 import {Cheddar} from './Cheddar'
 
-let collection         = Symbol('collection')
-let middlewares        = Symbol('middlewares')
-let init_middlewares   = Symbol('init_middlewares')
-let execute_middleware = Symbol('execute_middleware')
+let collection = Symbol('collection')
+let middlewares = Symbol('middlewares')
+let initMiddlewares = Symbol('initMiddlewares')
+let executeMiddleware = Symbol('executeMiddleware')
 
 export function after(action) {
   return function (target, name, descriptor) {
@@ -22,20 +22,24 @@ export function before(action) {
 
 export class Model {
   constructor() {
-    this[init_middlewares]();
-    this[execute_middleware]('before', 'create')
+    this[initMiddlewares]();
+    this[executeMiddleware]('before', 'create')
     this[collection] = this.constructor.collection
     this.id = this[collection].id()
-    this[execute_middleware]('after', 'create')
+    this[executeMiddleware]('after', 'create')
   }
 
   before(action, middleware) {
-    if (!this[middlewares]) this[init_middlewares]();
+    if (!this[middlewares]) {
+      this[initMiddlewares]();
+    }
     this[middlewares].before[action].push(middleware)
   }
 
   after(action, middleware) {
-    if (!this[middlewares]) this[init_middlewares]();
+    if (!this[middlewares]) {
+      this[initMiddlewares]();
+    }
     this[middlewares].before[action].push(middleware)
   }
 
@@ -50,35 +54,42 @@ export class Model {
     }
   }
 
-  *save() {
-    this[execute_middleware]('before', 'save')
+  async save() {
+    this[executeMiddleware]('before', 'save')
 
     // Build collection instance
-    let obj = Object.assign({}, this)
-    obj._id = obj.id
+    let obj = Object.assign({ _id: this.id }, this)
     delete obj.id
 
-    yield* this[collection].update(obj._id, obj, { upsert: true })
-    this[execute_middleware]('after', 'save')
+    await this[collection].update(obj._id, obj, { upsert: true })
+    this[executeMiddleware]('after', 'save')
 
     return this
   }
 
-  *delete() {
-    this[execute_middleware]('before', 'delete')
-    yield* this[collection].removeById(this.id)
-    this[execute_middleware]('after', 'delete')
+  async delete() {
+    this[executeMiddleware]('before', 'delete')
+    await this[collection].removeById(this.id)
+    this[executeMiddleware]('after', 'delete')
     return this
   }
 
-  [init_middlewares]() {
+  [initMiddlewares]() {
     this[middlewares] = {
-      before: { create: [], delete: [], save: [] },
-      after:  { create: [], delete: [], save: [] }
+      before: {
+        create: [],
+        delete: [],
+        save: []
+      },
+      after: {
+        create: [],
+        delete: [],
+        save: []
+      }
     }
   }
 
-  [execute_middleware](timing, action) {
+  [executeMiddleware](timing, action) {
     this[middlewares][timing][action].forEach(middleware => {
       middleware.call(this)
     })
@@ -86,8 +97,8 @@ export class Model {
 
   static get collection() {
     let database = monk(Cheddar.database)
-    let collection_name = pluralize(this.name).toLowerCase()
-    return co_monk(database.get(collection_name))
+    let collectionName = pluralize(this.name).toLowerCase()
+    return coMonk(database.get(collectionName))
   }
 
   static count(query = {}) {

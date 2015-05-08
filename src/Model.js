@@ -101,8 +101,8 @@ export class Model {
     return coMonk(database.get(collectionName))
   }
 
-  static count(query = {}) {
-    return this.collection.count(query)
+  static async count(query = {}) {
+    return await this.collection.count(query)
   }
 
   static find() {

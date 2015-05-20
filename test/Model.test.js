@@ -2,6 +2,7 @@
 import {Model, Cheddar, before} from '../src/Cheddar'
 /*eslint-enable no-unused-vars*/
 import {assert} from 'chai'
+import 'mochawait'
 
 Cheddar.database = 'localhost/cheddar-test'
 
@@ -33,7 +34,7 @@ describe('ApplicationModel', () => {
     })
   })
 
-  describe('*save', () => {
+  describe('save', () => {
     it('save model on db', async function () {
       let count = await TestModel.count()
       assert.equal(count, 0)

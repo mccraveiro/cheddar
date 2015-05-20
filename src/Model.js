@@ -1,6 +1,6 @@
 import monk from 'monk'
-import coMonk from 'co-monk'
 import pluralize from 'pluralize'
+import promisify from 'es6-promisify';
 import {Cheddar} from './Cheddar'
 
 let collection = Symbol('collection')
@@ -30,16 +30,12 @@ export class Model {
   }
 
   before(action, middleware) {
-    if (!this[middlewares]) {
-      this[initMiddlewares]();
-    }
+    this[initMiddlewares]()
     this[middlewares].before[action].push(middleware)
   }
 
   after(action, middleware) {
-    if (!this[middlewares]) {
-      this[initMiddlewares]();
-    }
+    this[initMiddlewares]()
     this[middlewares].before[action].push(middleware)
   }
 
@@ -75,6 +71,10 @@ export class Model {
   }
 
   [initMiddlewares]() {
+    if (this[middlewares]) {
+      return;
+    }
+
     this[middlewares] = {
       before: {
         create: [],
@@ -98,7 +98,13 @@ export class Model {
   static get collection() {
     let database = monk(Cheddar.database)
     let collectionName = pluralize(this.name).toLowerCase()
-    return coMonk(database.get(collectionName))
+    let dbCollection = database.get(collectionName)
+
+    for (let method in ['count', 'update', 'removeById']) {
+      dbCollection[method] = promisify(dbCollection[method])
+    }
+
+    return dbCollection
   }
 
   static async count(query = {}) {

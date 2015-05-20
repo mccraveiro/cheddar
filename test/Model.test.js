@@ -1,17 +1,17 @@
-import {Model, Cheddar} from '../src/Cheddar'
-import {expect} from 'chai'
+/*eslint-disable no-unused-vars*/
+import {Model, Cheddar, before} from '../src/Cheddar'
+/*eslint-enable no-unused-vars*/
+import {assert} from 'chai'
+import 'mochawait'
 
 Cheddar.database = 'localhost/cheddar-test'
 
 class TestModel extends Model {
-  configure () {
-    this.before('save', this.validate)
-  }
-
+  @before('save')
   validate () {
-    this.ensure('age',      { type: Number })
-    this.ensure('name',     { type: String, required: true })
-    this.ensure('email',    { type: String, required: true })
+    this.ensure('age', { type: Number })
+    this.ensure('name', { type: String, required: true })
+    this.ensure('email', { type: String, required: true })
     this.ensure('password', { type: String, required: true })
   }
 }
@@ -23,57 +23,57 @@ describe('ApplicationModel', () => {
     model = new TestModel()
   })
 
-  afterEach(function*() {
-    yield model.delete()
+  afterEach(async function () {
+    await model.delete()
   })
 
   describe('constructor', () => {
     it('returns a new instance', () => {
-      expect(model instanceof TestModel).to.be.true
-      expect(model.id).to.exist
+      assert.isTrue(model instanceof TestModel)
+      assert.property(model, 'id')
     })
   })
 
-  describe('*save', () => {
-    it('save model on db', function *() {
-      let count = yield TestModel.count()
-      expect(count).to.be.equal(0)
+  describe('save', () => {
+    it('save model on db', async function () {
+      let count = await TestModel.count()
+      assert.equal(count, 0)
 
       model.name = 'Test'
       model.email = 'test@test.com'
       model.password = '123456'
-      yield model.save()
+      await model.save()
 
-      count = yield TestModel.count()
-      expect(count).to.be.equal(1)
+      count = await TestModel.count()
+      assert.equal(count, 1)
     })
   })
 
   describe('save middleware', () => {
-    it('fails if missing property', function *() {
+    it('fails if missing property', async function () {
       try {
         model.name = 'Test'
-        yield model.save()
+        await model.save()
       } catch (error) {
-        expect(error.message).to.be.equal('email is missing.')
+        assert.equal(error.message, 'email is missing.')
       }
     })
 
-    it('fails if unexpected type', function *() {
+    it('fails if unexpected type', async function () {
       try {
         model.name = 'Test'
         model.age = '42'
-        yield model.save()
+        await model.save()
       } catch (error) {
-        expect(error.message).to.be.equal('age is not a Number.')
+        assert.equal(error.message, 'age is not a Number.')
       }
     })
 
-    it('save model if validation is ok', function *() {
+    it('save model if validation is ok', async function () {
       model.name = 'Test'
       model.email = 'test@test.com'
       model.password = '123456'
-      yield model.save()
+      await model.save()
     })
   })
 })

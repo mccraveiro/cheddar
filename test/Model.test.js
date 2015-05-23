@@ -1,59 +1,52 @@
-/*eslint-disable no-unused-vars*/
-import {Model, Cheddar, before} from '../src/Cheddar'
-/*eslint-enable no-unused-vars*/
+import {Cheddar} from '../src/Cheddar'
+import {Factory} from './Factory'
+import {User} from './factories/user'
 import {assert} from 'chai'
 import 'mochawait'
 
 Cheddar.database = 'localhost/cheddar-test'
 
-class TestModel extends Model {
-  @before('save')
-  validate () {
-    this.ensure('age', { type: Number })
-    this.ensure('name', { type: String, required: true })
-    this.ensure('email', { type: String, required: true })
-    this.ensure('password', { type: String, required: true })
-  }
-}
-
 describe('ApplicationModel', () => {
-  let model
-
-  beforeEach(() => {
-    model = new TestModel()
-  })
-
   afterEach(async function () {
-    await model.delete()
+    await User.remove()
   })
 
   describe('constructor', () => {
-    it('returns a new instance', () => {
-      assert.isTrue(model instanceof TestModel)
+    it('returns a new instance', async function () {
+      let model = await Factory.create('User')
+      assert.instanceOf(model, User)
       assert.property(model, 'id')
     })
   })
 
-  describe('save', () => {
-    it('save model on db', async function () {
-      let count = await TestModel.count()
-      assert.equal(count, 0)
+  describe('count', () => {
+    it('increase count after creating model', async function () {
+      assert.equal(await User.count(), 0)
+      await Factory.create('User')
+      assert.equal(await User.count(), 1)
+    })
+  })
 
-      model.name = 'Test'
-      model.email = 'test@test.com'
-      model.password = '123456'
-      await model.save()
+  describe('find', () => {
+    it('returns empty array', async function () {
+      let models = await User.find()
+      assert(Array.isArray(models))
+      assert.lengthOf(models, 0)
+    })
 
-      count = await TestModel.count()
-      assert.equal(count, 1)
+    it('returns array of models', async function () {
+      await Factory.createList('User', 3)
+      let models = await User.find()
+      assert(Array.isArray(models))
+      assert.lengthOf(models, 3)
     })
   })
 
   describe('save middleware', () => {
     it('fails if missing property', async function () {
       try {
-        model.name = 'Test'
-        await model.save()
+        await Factory.create('User', { email: undefined })
+        throw new Error('Middleware failed')
       } catch (error) {
         assert.equal(error.message, 'email is missing.')
       }
@@ -61,19 +54,11 @@ describe('ApplicationModel', () => {
 
     it('fails if unexpected type', async function () {
       try {
-        model.name = 'Test'
-        model.age = '42'
-        await model.save()
+        await Factory.create('User', { age: '42' })
+        throw new Error('Middleware failed')
       } catch (error) {
         assert.equal(error.message, 'age is not a Number.')
       }
-    })
-
-    it('save model if validation is ok', async function () {
-      model.name = 'Test'
-      model.email = 'test@test.com'
-      model.password = '123456'
-      await model.save()
     })
   })
 })

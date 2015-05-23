@@ -99,8 +99,9 @@ export class Model {
     let database = monk(Cheddar.database)
     let collectionName = pluralize(this.name).toLowerCase()
     let dbCollection = database.get(collectionName)
+    let methods = ['count', 'update', 'removeById', 'find', 'remove'];
 
-    for (let method in ['count', 'update', 'removeById']) {
+    for (let method in methods) {
       dbCollection[method] = promisify(dbCollection[method])
     }
 
@@ -111,8 +112,12 @@ export class Model {
     return await this.collection.count(query)
   }
 
-  static find() {
-    // TODO
+  static async find(query = {}) {
+    return await this.collection.find(query)
+  }
+
+  static async remove(query = {}) {
+    return await this.collection.remove(query)
   }
 
   static all() {

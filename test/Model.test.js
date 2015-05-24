@@ -79,4 +79,42 @@ describe('ApplicationModel', () => {
       }
     })
   })
+
+  describe('where', () => {
+    it('returns documents matching query', async function () {
+      await Factory.create('User', { name: 'Jack' })
+      await Factory.createList('User', 3)
+      let documents = await User.where({ name: 'Jack' }).find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 1)
+      assert.instanceOf(documents[0], User)
+      assert.equal(documents[0].name, 'Jack')
+    })
+  })
+
+  describe('limit', () => {
+    it('returns only two documents', async function () {
+      await Factory.createList('User', 3)
+      let documents = await User.limit(2).find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 2)
+      for (let i in documents) {
+        assert.instanceOf(documents[i], User)
+      }
+    })
+  })
+
+  describe('skip', () => {
+    it('returns only the second document', async function () {
+      await Factory.create('User', { name: 'First User' })
+      await Factory.create('User', { name: 'Second User' })
+      await Factory.create('User', { name: 'Third User' })
+
+      let documents = await User.limit(1).skip(1).find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 1)
+      assert.instanceOf(documents[0], User)
+      assert.equal(documents[0].name, 'Second User')
+    })
+  })
 })

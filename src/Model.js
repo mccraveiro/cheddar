@@ -1,7 +1,7 @@
-import monk from 'monk'
 import pluralize from 'pluralize'
 import promisify from 'es6-promisify';
 import {Cheddar} from './Cheddar'
+import {Query} from './Query'
 
 export function after(action) {
   return function (target, name, descriptor) {
@@ -17,7 +17,7 @@ export function before(action) {
 
 export class Model {
   constructor(properties = {}) {
-    this._initMiddlewares()
+    this._init()
     this._executeMiddleware('before', 'create')
     this._collection = this.constructor.collection
     this.id = this._collection.id()
@@ -26,12 +26,12 @@ export class Model {
   }
 
   before(action, middleware) {
-    this._initMiddlewares()
+    this._init()
     this._middlewares.before[action].push(middleware)
   }
 
   after(action, middleware) {
-    this._initMiddlewares()
+    this._init()
     this._middlewares.before[action].push(middleware)
   }
 
@@ -61,21 +61,19 @@ export class Model {
     return this
   }
 
-  _initMiddlewares() {
-    if (this._middlewares) {
-      return;
-    }
-
-    this._middlewares = {
-      before: {
-        create: [],
-        delete: [],
-        save: []
-      },
-      after: {
-        create: [],
-        delete: [],
-        save: []
+  _init() {
+    if (!this._middlewares) {
+      this._middlewares = {
+        before: {
+          create: [],
+          delete: [],
+          save: []
+        },
+        after: {
+          create: [],
+          delete: [],
+          save: []
+        }
       }
     }
   }
@@ -96,55 +94,21 @@ export class Model {
   }
 
   static get collection() {
-    let database = monk(Cheddar.database)
     let collectionName = pluralize(this.name).toLowerCase()
-    let dbCollection = database.get(collectionName)
+    let dbCollection = Cheddar._connection.get(collectionName)
     let methods = ['count', 'update', 'removeById', 'find', 'remove'];
-
     for (let method in methods) {
       dbCollection[method] = promisify(dbCollection[method])
     }
-
     return dbCollection
   }
+}
 
-  static async count(query = {}) {
-    return await this.collection.count(query)
-  }
-
-  static async find(query = {}) {
-    let documents = await this.collection.find(query)
-    for (let i in documents) {
-      documents[i] = new this(documents[i])
-    }
-    return documents
-  }
-
-  static async findOne(query = {}) {
-    let document = await this.collection.findOne(query)
-    if (document) {
-      return new this(document)
-    }
-    return null
-  }
-
-  static async remove(query = {}) {
-    return await this.collection.remove(query)
-  }
-
-  static all() {
-    // TODO
-  }
-
-  static where() {
-    // TODO
-  }
-
-  static skip() {
-    // TODO
-  }
-
-  static limit() {
-    // TODO
+/*eslint-disable no-loop-func*/
+for (let method of Query.methods) {
+  Model.prototype.constructor[method] = function (...args) {
+    let query = new Query(this)
+    return query[method].apply(query, args)
   }
 }
+/*eslint-enable no-loop-func*/

@@ -34,11 +34,29 @@ describe('ApplicationModel', () => {
       assert.lengthOf(models, 0)
     })
 
-    it('returns array of models', async function () {
+    it('returns array of documents', async function () {
       await Factory.createList('User', 3)
-      let models = await User.find()
-      assert(Array.isArray(models))
-      assert.lengthOf(models, 3)
+      let documents = await User.find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 3)
+
+      for (let i in documents) {
+        assert.instanceOf(documents[i], User)
+      }
+    })
+  })
+
+  describe('findOne', () => {
+    it('returns null', async function () {
+      let model = await User.findOne()
+      assert.isNull(model)
+    })
+
+    it('returns model object', async function () {
+      await Factory.create('User')
+      let model = await User.findOne()
+      assert.isObject(model)
+      assert.instanceOf(model, User)
     })
   })
 

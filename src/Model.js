@@ -21,11 +21,12 @@ export function before(action) {
 }
 
 export class Model {
-  constructor() {
+  constructor(properties = {}) {
     this[initMiddlewares]();
     this[executeMiddleware]('before', 'create')
     this[collection] = this.constructor.collection
     this.id = this[collection].id()
+    Object.assign(this, properties)
     this[executeMiddleware]('after', 'create')
   }
 
@@ -113,7 +114,19 @@ export class Model {
   }
 
   static async find(query = {}) {
-    return await this.collection.find(query)
+    let documents = await this.collection.find(query)
+    for (let i in documents) {
+      documents[i] = new this(documents[i])
+    }
+    return documents
+  }
+
+  static async findOne(query = {}) {
+    let document = await this.collection.findOne(query)
+    if (document) {
+      return new this(document)
+    }
+    return null
   }
 
   static async remove(query = {}) {

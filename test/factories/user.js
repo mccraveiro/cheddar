@@ -4,11 +4,13 @@ import {Model, before} from '../../src/Cheddar'
 
 export class User extends Model {
 
-  constructor() {
-    super()
-    this.name = 'John Doe'
-    this.email = 'john@example.com'
-    this.password = '12345678'
+  constructor(properties = {}) {
+    let defaults = {
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: '12345678'
+    }
+    super(Object.assign(defaults, properties))
   }
 
   @before('save')

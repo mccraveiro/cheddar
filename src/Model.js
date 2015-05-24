@@ -48,17 +48,9 @@ export class Model {
 
   async save() {
     this._executeMiddleware('before', 'save')
-
-    // Build collection instance (excluding private properties)
-    let obj = { _id: this.id }
-    for (let prop of Object.getOwnPropertyNames(this)) {
-      if (prop.startsWith('_') || prop === 'id') { continue }
-      obj[prop] = this[prop]
-    }
-
-    await this._collection.update(obj._id, obj, { upsert: true })
+    let document = this._document
+    await this._collection.update(document._id, document, { upsert: true })
     this._executeMiddleware('after', 'save')
-
     return this
   }
 
@@ -92,6 +84,15 @@ export class Model {
     this._middlewares[timing][action].forEach(middleware => {
       middleware.call(this)
     })
+  }
+
+  get _document() {
+    let obj = { _id: this.id }
+    for (let prop of Object.getOwnPropertyNames(this)) {
+      if (prop.startsWith('_') || prop === 'id') { continue }
+      obj[prop] = this[prop]
+    }
+    return obj
   }
 
   static get collection() {

@@ -4,7 +4,7 @@
   "description": "ES6 framework",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel/register test/**/*"
+    "test": "mocha --compilers js:babel/register test/**/*.test.js"
   },
   "repository": {
     "type": "git",

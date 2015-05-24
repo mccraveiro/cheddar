@@ -1,59 +1,70 @@
-/*eslint-disable no-unused-vars*/
-import {Model, Cheddar, before} from '../src/Cheddar'
-/*eslint-enable no-unused-vars*/
+import {Cheddar} from '../src/Cheddar'
+import {Factory} from './Factory'
+import {User} from './factories/user'
 import {assert} from 'chai'
 import 'mochawait'
 
 Cheddar.database = 'localhost/cheddar-test'
 
-class TestModel extends Model {
-  @before('save')
-  validate () {
-    this.ensure('age', { type: Number })
-    this.ensure('name', { type: String, required: true })
-    this.ensure('email', { type: String, required: true })
-    this.ensure('password', { type: String, required: true })
-  }
-}
-
 describe('ApplicationModel', () => {
-  let model
-
-  beforeEach(() => {
-    model = new TestModel()
-  })
-
   afterEach(async function () {
-    await model.delete()
+    await User.remove()
   })
 
   describe('constructor', () => {
-    it('returns a new instance', () => {
-      assert.isTrue(model instanceof TestModel)
+    it('returns a new instance', async function () {
+      let model = await Factory.create('User')
+      assert.instanceOf(model, User)
       assert.property(model, 'id')
     })
   })
 
-  describe('save', () => {
-    it('save model on db', async function () {
-      let count = await TestModel.count()
-      assert.equal(count, 0)
+  describe('count', () => {
+    it('increase count after creating model', async function () {
+      assert.equal(await User.count(), 0)
+      await Factory.create('User')
+      assert.equal(await User.count(), 1)
+    })
+  })
 
-      model.name = 'Test'
-      model.email = 'test@test.com'
-      model.password = '123456'
-      await model.save()
+  describe('find', () => {
+    it('returns empty array', async function () {
+      let models = await User.find()
+      assert(Array.isArray(models))
+      assert.lengthOf(models, 0)
+    })
 
-      count = await TestModel.count()
-      assert.equal(count, 1)
+    it('returns array of documents', async function () {
+      await Factory.createList('User', 3)
+      let documents = await User.find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 3)
+
+      for (let i in documents) {
+        assert.instanceOf(documents[i], User)
+      }
+    })
+  })
+
+  describe('findOne', () => {
+    it('returns null', async function () {
+      let model = await User.findOne()
+      assert.isNull(model)
+    })
+
+    it('returns model object', async function () {
+      await Factory.create('User')
+      let model = await User.findOne()
+      assert.isObject(model)
+      assert.instanceOf(model, User)
     })
   })
 
   describe('save middleware', () => {
     it('fails if missing property', async function () {
       try {
-        model.name = 'Test'
-        await model.save()
+        await Factory.create('User', { email: undefined })
+        throw new Error('Middleware failed')
       } catch (error) {
         assert.equal(error.message, 'email is missing.')
       }
@@ -61,19 +72,49 @@ describe('ApplicationModel', () => {
 
     it('fails if unexpected type', async function () {
       try {
-        model.name = 'Test'
-        model.age = '42'
-        await model.save()
+        await Factory.create('User', { age: '42' })
+        throw new Error('Middleware failed')
       } catch (error) {
         assert.equal(error.message, 'age is not a Number.')
       }
     })
+  })
 
-    it('save model if validation is ok', async function () {
-      model.name = 'Test'
-      model.email = 'test@test.com'
-      model.password = '123456'
-      await model.save()
+  describe('where', () => {
+    it('returns documents matching query', async function () {
+      await Factory.create('User', { name: 'Jack' })
+      await Factory.createList('User', 3)
+      let documents = await User.where({ name: 'Jack' }).find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 1)
+      assert.instanceOf(documents[0], User)
+      assert.equal(documents[0].name, 'Jack')
+    })
+  })
+
+  describe('limit', () => {
+    it('returns only two documents', async function () {
+      await Factory.createList('User', 3)
+      let documents = await User.limit(2).find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 2)
+      for (let i in documents) {
+        assert.instanceOf(documents[i], User)
+      }
+    })
+  })
+
+  describe('skip', () => {
+    it('returns only the second document', async function () {
+      await Factory.create('User', { name: 'First User' })
+      await Factory.create('User', { name: 'Second User' })
+      await Factory.create('User', { name: 'Third User' })
+
+      let documents = await User.limit(1).skip(1).find()
+      assert.isArray(documents)
+      assert.lengthOf(documents, 1)
+      assert.instanceOf(documents[0], User)
+      assert.equal(documents[0].name, 'Second User')
     })
   })
 })

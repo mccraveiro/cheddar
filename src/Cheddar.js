@@ -1,15 +1,16 @@
+import monk from 'monk'
+
 export * from './Controller'
 export * from './Model'
 export * from './Router'
 
-let database = Symbol('database')
-
 export class Cheddar {
   static get database() {
-    return this[database]
+    return this._database
   }
 
   static set database(url) {
-    this[database] = url
+    this._database = url
+    this._connection = monk(Cheddar.database)
   }
 }

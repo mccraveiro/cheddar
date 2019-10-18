@@ -25,7 +25,8 @@
     "es6-promisify": "^1.1.1",
     "mochawait": "^2.0.0",
     "monk": "^1.0.1",
-    "pluralize": "^1.1.2"
+    "pluralize": "^1.1.2",
+    "ramda": "^0.26.1"
   },
   "devDependencies": {
     "babel-eslint": "^3.1.1",
